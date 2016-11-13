@@ -1,8 +1,12 @@
 package eu.jakubtudruj.networking;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ImageView;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,10 +27,10 @@ public class MainActivity extends AppCompatActivity {
     private InputStream openHttpConnection(String urlString) throws IOException {
         URL url = new URL(urlString);
         InputStream inputStream = null;
-        int responseConde = -1;
+        int responseCode = -1;
         URLConnection connection = url.openConnection();
 
-        if(!(connection instanceof  HttpURLConnection)) {
+        if (!(connection instanceof HttpURLConnection)) {
             throw new IOException("Not a http connection");
 
             try {
@@ -37,14 +41,39 @@ public class MainActivity extends AppCompatActivity {
                 httpURLConnection.connect();
                 responseCode = httpURLConnection.getResponseCode();
 
-                if(responseConde == HttpURLConnection.HTTP_OK) {
+                if (responseCode == HttpURLConnection.HTTP_OK) {
                     inputStream = httpURLConnection.getInputStream();
                 }
             } catch (Exception e) {
                 Log.e("Networking", e.getLocalizedMessage());
-                throw IOException("Error connection");
+                throw new IOException("Error connection");
             }
         }
 
-        return inputStream
+        return inputStream;
+    }
+
+    private Bitmap downloadImage (String urlString) {
+        Bitmap bitmap = null;
+        InputStream inputStream = null;
+        try {
+            inputStream = this.openHttpConnection(urlString);
+            bitmap = BitmapFactory.decodeStream(inputStream);
+            inputStream.close();
+        } catch (Exception e) {
+            Log.e("Downloading Bitmap", e.getLocalizedMessage());
+        }
+        return bitmap;
+    }
+
+    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+        protected Bitmap doInBackground(String... urls) {
+            return MainActivity.this.downloadImage(urls[0]);
+        }
+
+        protected void onPostExecute(Bitmap result) {
+            ImageView imageView = (ImageView) findViewById(R.id.img);
+            imageView.setImageBitmap(result);
+        }
+    }
 }
