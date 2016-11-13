@@ -15,6 +15,10 @@ import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
 import java.io.IOException;
@@ -24,6 +28,9 @@ import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLConnection;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import static java.lang.System.in;
 
@@ -44,7 +51,8 @@ public class MainActivity extends AppCompatActivity {
 
 
         new DownloadImageTask().execute("http://st.depositphotos.com/1023799/2906/v/950/depositphotos_29066941-stock-illustration-grunge-example-rubber-stamp-vector.jpg");
-        new DownloadTextTask().execute("http://stackoverflow.com/questions/6674341/how-to-use-scrollview-in-android");
+//        new DownloadTextTask().execute("http://stackoverflow.com/questions/6674341/how-to-use-scrollview-in-android");
+        new DownloadDefinitionTask().execute("keyboard");
     }
 
     private InputStream openHttpConnection(String urlString) throws IOException {
@@ -126,6 +134,58 @@ public class MainActivity extends AppCompatActivity {
     private class DownloadTextTask extends AsyncTask<String, Void, String> {
         protected String doInBackground(String... urls) {
             return MainActivity.this.downloadText(urls[0]);
+        }
+
+        protected void onPostExecute(String result) {
+            MainActivity.this.myTextView.setText(result);
+        }
+    }
+
+    /*
+    * Word definitions
+    */
+
+    private String wordDefinition(String word) {
+        InputStream inputStream = null;
+        String definition = "";
+
+        try {
+            inputStream = openHttpConnection("http://services.aonaware.com/DictService/DictService.asmx/Define?word=" + word);
+            Document document = null;
+            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder documentBuilder;
+            try {
+                documentBuilder = documentBuilderFactory.newDocumentBuilder();
+                document = documentBuilder.parse(inputStream);
+            } catch (Throwable t) {
+                Log.e("document builder", t.getLocalizedMessage());
+
+            }
+            NodeList definitionElements = document.getElementsByTagName("Definition");
+            for(int i=0; i< definitionElements.getLength(); i++) {
+                Node item = definitionElements.item(i);
+                if(item.getNodeType() == Node.ELEMENT_NODE) {
+                    Element definitionElement = (Element) item;
+                    NodeList wordDefinitionElements = definitionElement.getElementsByTagName("WordDefinition");
+
+                    definition = "";
+                    for (int j=0; j<wordDefinitionElements.getLength(); j++) {
+                        Element wordDefElement = (Element) wordDefinitionElements.item(j);
+                        NodeList list = ((Node) wordDefElement).getChildNodes();
+                        definition += ((Node) list.item(0)).getNodeValue() + "\n\n";
+                    }
+                }
+            }
+            document.getDocumentElement().normalize();
+        } catch (Throwable t) {
+            Log.e("document problem", t.getLocalizedMessage());
+        }
+        return definition;
+    }
+
+    private class DownloadDefinitionTask extends AsyncTask<String, Void, String> {
+        protected String doInBackground(String... urls) {
+            return MainActivity.this.wordDefinition(urls[0]);
         }
 
         protected void onPostExecute(String result) {
