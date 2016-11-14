@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
     void findDefinitionButtonOnClick(View view) {
         this.showProgressIndicator();
         this.hideKeyboard();
-        
+
         String word = this.wordEditText.getText().toString();
         new DownloadDefinitionTask().execute(word);
     }
