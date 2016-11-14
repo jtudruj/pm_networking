@@ -1,5 +1,7 @@
 package eu.jakubtudruj.networking;
 
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -7,7 +9,12 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.google.android.gms.appindexing.Action;
@@ -38,7 +45,8 @@ public class MainActivity extends AppCompatActivity {
 
     ImageView mainImageView;
     TextView myTextView;
-
+    EditText wordEditText;
+    ProgressBar progressBar;
     final static int BUFFER_SIZE = 2048;
 
     @Override
@@ -48,11 +56,34 @@ public class MainActivity extends AppCompatActivity {
 
         this.mainImageView = (ImageView) findViewById(R.id.img);
         this.myTextView = (TextView) findViewById(R.id.myTextView);
-
+        this.wordEditText = (EditText) findViewById(R.id.wordEditText);
+        this.progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        this.progressBar.setVisibility(View.INVISIBLE);
 
         new DownloadImageTask().execute("http://st.depositphotos.com/1023799/2906/v/950/depositphotos_29066941-stock-illustration-grunge-example-rubber-stamp-vector.jpg");
-//        new DownloadTextTask().execute("http://stackoverflow.com/questions/6674341/how-to-use-scrollview-in-android");
-        new DownloadDefinitionTask().execute("keyboard");
+
+        this.myTextView.setText("Tutaj pojawią się definicje wyszukiwanego słowa.\nWpisz wyszukiwane słowo w piniższe pole i naciśnij przycisk SZUKAJ");
+    }
+
+    void findDefinitionButtonOnClick(View view) {
+        this.showProgressIndicator();
+        this.hideKeyboard();
+        
+        String word = this.wordEditText.getText().toString();
+        new DownloadDefinitionTask().execute(word);
+    }
+
+    void showProgressIndicator() {
+        this.progressBar.setVisibility(View.VISIBLE);
+    }
+
+    void dismissProgressIndicator() {
+        this.progressBar.setVisibility(View.INVISIBLE);
+    }
+
+    void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(this.wordEditText.getWindowToken(), 0);
     }
 
     private InputStream openHttpConnection(String urlString) throws IOException {
@@ -190,6 +221,7 @@ public class MainActivity extends AppCompatActivity {
 
         protected void onPostExecute(String result) {
             MainActivity.this.myTextView.setText(result);
+            MainActivity.this.dismissProgressIndicator();
         }
     }
 }

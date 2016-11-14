@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">networking</string>
+    <string name="find">Szukaj</string>
+    <string name="enter_word_to_find">Wpisz słowo, które chesz wyszukać</string>
 </resources>
